@@ -48,7 +48,7 @@ export function authMessage(err) {
     'auth/network-request-failed': 'No internet connection. Check it and try again.',
     'auth/operation-not-allowed': 'Email sign-in is turned off in Firebase. Turn on Email/Password under Authentication → Sign-in method.',
     'permission-denied': 'Firebase refused this. Check that the latest security rules from firestore.rules are published.',
-    'bad-code': 'That company code doesn’t match any company. Check it with your Admin.',
+    'bad-code': 'That team code doesn’t match any team. Check it with your Admin.',
   }
   return map[code] || err?.message || 'Something went wrong. Try again.'
 }
@@ -180,24 +180,23 @@ export function useFirebaseBackend(toast) {
       await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence)
       await signInWithEmailAndPassword(auth, email.trim(), password)
     },
-    // choice: { mode: 'create', company: 'Intech' } or { mode: 'join', code: 'K7P2QX' }
-    signUp: async (name, email, password, remember, choice) => {
-      const company = choice.mode === 'join' ? await findCompany(choice.code) : null // check the code before creating the account
+    // Sign-up creates the login only. Creating or joining a team happens on the next screen.
+    signUp: async (name, email, password, remember) => {
       await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence)
       busy.current = true
       try {
         const cred = await createUserWithEmailAndPassword(auth, email.trim(), password)
         await updateProfile(cred.user, { displayName: name.trim() })
-        await placeInCompany(cred.user, name, { ...choice, company: company || choice.company })
       } finally {
         busy.current = false
       }
+      setProfile({ role: 'none', displayName: name.trim(), email: email.trim() })
     },
     // For a signed-in account that has no company yet (or was removed from one).
     setUpCompany: async (choice) => {
       busy.current = true
       try {
-        await placeInCompany(auth.currentUser, profile?.displayName, choice)
+        await placeInCompany(auth.currentUser, auth.currentUser?.displayName || profile?.displayName, choice)
       } finally {
         busy.current = false
       }

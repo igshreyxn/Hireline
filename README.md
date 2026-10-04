@@ -8,9 +8,9 @@ Built with React + Vite + Firebase (Authentication + Firestore). Installable as 
 
 ## How accounts work (many companies, one app)
 
-- **Starting Hireline for a firm:** Create account → **Create a new company** → type the company name. You become **that company's Admin**.
-- The Admin gets a **6-character company code** (Team page → *Invite your team* → *Copy invite message*).
-- **Joining a team:** Create account → **Join my company** → enter the code. You wait until your company's Admin approves you and picks your role (Junior HR / Senior HR / Admin).
+- **Starting Hireline for a firm:** Create account (name, email, password) → **Create a team** → type the company name. You become **that company's Admin**.
+- The Admin gets a **6-character team code** (Team page → *Invite your team* → *Copy invite message*).
+- **Joining a team:** Create account → **Join a team** → enter the team code. You wait until your company's Admin approves you and picks your role (Junior HR / Senior HR / Admin).
 - Every company's candidates, client roles and people are **private to that company** (enforced by `firestore.rules`).
 - **Keep me signed in** remembers the login on that device. **Forgot password?** emails a reset link.
 - Removing someone in Team cuts their access straight away; they can rejoin only with the code and a new approval.
@@ -47,7 +47,7 @@ Until Firebase is connected, the app runs in **demo mode** (data stays in that b
 2. Add your Vercel address, e.g. `hireline-xyz.vercel.app`.
 
 ### 6. First sign-up
-Open the site, choose **Create account → Create a new company**. That account is the company's Admin. Share the company code from **Team** with the team and approve each person there.
+Open the site, choose **Create account**, then **Create a team**. That account is the company's Admin. Share the company code from **Team** with the team and approve each person there.
 
 To try things out, Admin can click **Load example data** in Team, then **Remove example data** before real use.
 

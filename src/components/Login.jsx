@@ -12,9 +12,6 @@ export default function Login({ backend }) {
   const [email, setEmail] = useState(demo ? 'senior@demo.hire' : '')
   const [password, setPassword] = useState(demo ? DEMO_PASSWORD : '')
   const [remember, setRemember] = useState(true)
-  const [companyMode, setCompanyMode] = useState('join') // join | create
-  const [company, setCompany] = useState('')
-  const [code, setCode] = useState('')
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
   const [busy, setBusy] = useState(false)
@@ -44,10 +41,7 @@ export default function Login({ backend }) {
     if (!email.trim() || !password) return setError('Enter your email and password.')
     if (tab === 'signup') {
       if (!name.trim()) return setError('Enter your name.')
-      if (!demo && companyMode === 'create' && !company.trim()) return setError('Enter your company’s name.')
-      if (!demo && companyMode === 'join' && code.replace(/[^a-z0-9]/gi, '').length < 6) return setError('Enter the 6-character company code from your Admin.')
-      const choice = companyMode === 'create' ? { mode: 'create', company } : { mode: 'join', code }
-      return run(() => backend.signUp(name, email, password, remember, choice))
+      return run(() => backend.signUp(name, email, password, remember))
     }
     return run(() => backend.signIn(email, password, remember))
   }
@@ -71,7 +65,7 @@ export default function Login({ backend }) {
     signin: 'Welcome back. Sign in to your recruitment desk.',
     signup: demo
       ? 'In demo mode new accounts wait for the demo Admin (admin@demo.hire) to approve them.'
-      : 'Starting Hireline for your firm? Create a new company and you become its Admin. Joining your team? Use the company code your Admin shared.',
+      : 'Just your name, email and a password. Next, you’ll create your team or join one with a team code.',
     reset: 'We’ll email you a link to choose a new password.',
   }
 
@@ -117,31 +111,6 @@ export default function Login({ backend }) {
               <label className="field">
                 <span>Your name</span>
                 <input className="input" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Ananya Sen" />
-              </label>
-            )}
-            {tab === 'signup' && !demo && (
-              <div className="field">
-                <span>Company</span>
-                <div className="auth-tabs" role="radiogroup" style={{ alignSelf: 'stretch' }}>
-                  <button type="button" role="radio" aria-checked={companyMode === 'join'} aria-selected={companyMode === 'join'} onClick={() => setCompanyMode('join')} style={{ flex: 1 }}>
-                    Join my company
-                  </button>
-                  <button type="button" role="radio" aria-checked={companyMode === 'create'} aria-selected={companyMode === 'create'} onClick={() => setCompanyMode('create')} style={{ flex: 1 }}>
-                    Create a new company
-                  </button>
-                </div>
-              </div>
-            )}
-            {tab === 'signup' && !demo && companyMode === 'join' && (
-              <label className="field">
-                <span>Company code (6 characters, from your Admin)</span>
-                <input className="input num" {...noAuto} maxLength={8} value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="e.g. K7P2QX" style={{ letterSpacing: '.2em' }} />
-              </label>
-            )}
-            {tab === 'signup' && !demo && companyMode === 'create' && (
-              <label className="field">
-                <span>Company name</span>
-                <input className="input" value={company} onChange={(e) => setCompany(e.target.value)} placeholder="e.g. Intech Recruitment" />
               </label>
             )}
             <label className="field">

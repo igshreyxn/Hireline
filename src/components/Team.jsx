@@ -22,7 +22,7 @@ export default function Team() {
   const joinCode = data.org?.joinCode
   const appLink = typeof window !== 'undefined' ? window.location.origin : ''
   const invite = joinCode
-    ? `Join ${data.settings?.name || 'our team'} on Hireline:\n1. Open ${appLink}\n2. Tap "Create account", then "Join my company"\n3. Enter the company code: ${joinCode}\nI'll approve you once you've signed up.`
+    ? `Join ${data.settings?.name || 'our team'} on Hireline:\n1. Open ${appLink}\n2. Tap "Create account" (name, email, password)\n3. Choose "Join a team" and enter the team code: ${joinCode}\nI'll approve you once you've signed up.`
     : ''
 
   const approve = (id, m, role) => {
@@ -44,13 +44,13 @@ export default function Team() {
           <h3 style={{ fontSize: 16 }}>Invite your team</h3>
           <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
             <div>
-              <div className="label">Company code</div>
+              <div className="label">Team code</div>
               <div className="num" style={{ fontSize: 28, fontWeight: 500, letterSpacing: '.18em' }}>
                 {joinCode}
               </div>
             </div>
             <p className="muted" style={{ margin: 0, flex: 1, minWidth: 220, fontSize: 13 }}>
-              Teammates open {appLink.replace(/^https?:\/\//, '')}, choose <b>Create account → Join my company</b> and
+              Teammates open {appLink.replace(/^https?:\/\//, '')}, create an account, choose <b>Join a team</b> and
               enter this code. They show up below for you to approve. Only people you approve can see your company's data.
             </p>
             <button className="btn" onClick={() => copyText(invite, toast)}>
@@ -144,8 +144,8 @@ export default function Team() {
           })}
         </div>
         <p className="faint" style={{ margin: 0, fontSize: 13 }}>
-          To add someone, send them the invite message with your company code. They choose <b>Create account → Join my
-          company</b>, then you approve them here and pick their role. Junior HRs add and screen candidates; Senior HRs and Admins move candidates through every stage and
+          To add someone, send them the invite message with your team code. They create an account, choose <b>Join a
+          team</b>, then you approve them here and pick their role. Junior HRs add and screen candidates; Senior HRs and Admins move candidates through every stage and
           manage client roles.
         </p>
       </section>
