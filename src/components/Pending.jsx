@@ -21,7 +21,7 @@ export default function Pending({ profile, onSignOut }) {
         <p className="muted" style={{ margin: 0 }}>
           {failed
             ? profile.error
-            : 'Your account is created. An Admin needs to approve it and choose your role before you can see the pipeline. Ask them to open Team in Hireline. This page updates by itself once you’re approved.'}
+            : `Your account is created${profile.orgName ? ` and linked to ${profile.orgName}` : ''}. Your company’s Admin needs to approve it and choose your role before you can see the pipeline. Ask them to open Team in Hireline. This page updates by itself once you’re approved.`}
         </p>
         <div>
           <button className="btn" onClick={onSignOut}>

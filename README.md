@@ -6,14 +6,14 @@ Built with React + Vite + Firebase (Authentication + Firestore). Installable as 
 
 ---
 
-## How accounts work
+## How accounts work (many companies, one app)
 
-- People create their own account with **name, email and password**.
-- The **first account ever created becomes the Admin**.
-- Every account after that shows **"Waiting for approval"** until the Admin approves it in **Team** and picks a role (Junior HR or Senior HR).
-- **Keep me signed in** (on by default) remembers the login on that device. Untick it on shared computers.
-- **Forgot password?** emails a reset link.
-- Removing someone in Team cuts their access straight away.
+- **Starting Hireline for a firm:** Create account → **Create a new company** → type the company name. You become **that company's Admin**.
+- The Admin gets a **6-character company code** (Team page → *Invite your team* → *Copy invite message*).
+- **Joining a team:** Create account → **Join my company** → enter the code. You wait until your company's Admin approves you and picks your role (Junior HR / Senior HR / Admin).
+- Every company's candidates, client roles and people are **private to that company** (enforced by `firestore.rules`).
+- **Keep me signed in** remembers the login on that device. **Forgot password?** emails a reset link.
+- Removing someone in Team cuts their access straight away; they can rejoin only with the code and a new approval.
 
 Until Firebase is connected, the app runs in **demo mode** (data stays in that browser, demo logins use password `demo123`).
 
@@ -47,7 +47,7 @@ Until Firebase is connected, the app runs in **demo mode** (data stays in that b
 2. Add your Vercel address, e.g. `hireline-xyz.vercel.app`.
 
 ### 6. First sign-up
-Open the site, choose **Create account**. That first account is the Admin. Then send the link to the team and approve each person in **Team**.
+Open the site, choose **Create account → Create a new company**. That account is the company's Admin. Share the company code from **Team** with the team and approve each person there.
 
 To try things out, Admin can click **Load example data** in Team, then **Remove example data** before real use.
 

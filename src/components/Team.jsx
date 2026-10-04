@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { copyText } from '../utils.js'
 import { useApp } from '../store.jsx'
 import { ROLES } from '../constants.js'
 import { ago, daysSince } from '../utils.js'
@@ -18,6 +19,12 @@ export default function Team() {
     moved: cands.reduce((a, c) => a + (c.history || []).filter((h) => h.by === id && daysSince(h.at) <= 7).length, 0),
   })
 
+  const joinCode = data.org?.joinCode
+  const appLink = typeof window !== 'undefined' ? window.location.origin : ''
+  const invite = joinCode
+    ? `Join ${data.settings?.name || 'our team'} on Hireline:\n1. Open ${appLink}\n2. Tap "Create account", then "Join my company"\n3. Enter the company code: ${joinCode}\nI'll approve you once you've signed up.`
+    : ''
+
   const approve = (id, m, role) => {
     saveMember(id, { ...m, role, approvedAt: new Date().toISOString(), approvedBy: userId })
     toast(`${m.displayName} approved as ${ROLES[role]}`)
@@ -31,6 +38,27 @@ export default function Team() {
           <h1>Team</h1>
         </div>
       </div>
+
+      {isAdmin && joinCode && (
+        <section className="panel">
+          <h3 style={{ fontSize: 16 }}>Invite your team</h3>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div>
+              <div className="label">Company code</div>
+              <div className="num" style={{ fontSize: 28, fontWeight: 500, letterSpacing: '.18em' }}>
+                {joinCode}
+              </div>
+            </div>
+            <p className="muted" style={{ margin: 0, flex: 1, minWidth: 220, fontSize: 13 }}>
+              Teammates open {appLink.replace(/^https?:\/\//, '')}, choose <b>Create account → Join my company</b> and
+              enter this code. They show up below for you to approve. Only people you approve can see your company's data.
+            </p>
+            <button className="btn" onClick={() => copyText(invite, toast)}>
+              Copy invite message
+            </button>
+          </div>
+        </section>
+      )}
 
       {isAdmin && pending.length > 0 && (
         <section className="panel" style={{ borderColor: 'var(--amber)' }}>
@@ -116,8 +144,8 @@ export default function Team() {
           })}
         </div>
         <p className="faint" style={{ margin: 0, fontSize: 13 }}>
-          To add someone, send them the Hireline link. They choose <b>Create account</b>, then you approve them here and pick
-          their role. Junior HRs add and screen candidates; Senior HRs and Admins move candidates through every stage and
+          To add someone, send them the invite message with your company code. They choose <b>Create account → Join my
+          company</b>, then you approve them here and pick their role. Junior HRs add and screen candidates; Senior HRs and Admins move candidates through every stage and
           manage client roles.
         </p>
       </section>

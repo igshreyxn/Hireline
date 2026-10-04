@@ -1,55 +1,76 @@
 rules_version = '2';
 
-// Hireline security rules.
+// Hireline security rules — many companies, each with its own private data.
 // Paste this into Firebase console → Firestore Database → Rules, then click Publish.
 service cloud.firestore {
   match /databases/{database}/documents {
 
     function signedIn() { return request.auth != null; }
     function profilePath() { return /databases/$(database)/documents/users/$(request.auth.uid); }
-    function role() {
-      return signedIn() && exists(profilePath()) ? get(profilePath()).data.role : 'none';
-    }
-    function isMember() { return role() in ['junior', 'senior', 'admin']; }
-    function isSenior() { return role() in ['senior', 'admin']; }
-    function isAdmin()  { return role() == 'admin'; }
+    function hasProfile() { return signedIn() && exists(profilePath()); }
+    function myOrg()  { return hasProfile() ? get(profilePath()).data.get('orgId', '') : ''; }
+    function myRole() { return hasProfile() ? get(profilePath()).data.get('role', 'none') : 'none'; }
 
-    // Records who set the workspace up. Created once, by the first account.
-    match /meta/setup {
-      allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid;
-    }
+    function memberOf(org) { return myOrg() == org && myRole() in ['junior', 'senior', 'admin']; }
+    function seniorOf(org) { return myOrg() == org && myRole() in ['senior', 'admin']; }
+    function adminOf(org)  { return myOrg() == org && myRole() == 'admin'; }
 
-    // Team profiles.
-    match /users/{uid} {
-      allow read: if signedIn() && (request.auth.uid == uid || isMember());
-      // New accounts start as "pending". Only the first account (the one in meta/setup) may start as admin.
-      allow create: if signedIn() && request.auth.uid == uid && (
-        request.resource.data.role == 'pending' ||
-        (request.resource.data.role == 'admin' &&
-          getAfter(/databases/$(database)/documents/meta/setup).data.ownerUid == uid)
+    // A person may put themselves into a company only as:
+    //   admin   — of a company they are creating in the same write (they are its owner), or
+    //   pending — of a company whose join code they entered correctly.
+    function validPlacement(d) {
+      return (
+        d.role == 'admin' &&
+        getAfter(/databases/$(database)/documents/orgs/$(d.orgId)).data.ownerUid == request.auth.uid
+      ) || (
+        d.role == 'pending' &&
+        exists(/databases/$(database)/documents/joinCodes/$(d.joinCode)) &&
+        get(/databases/$(database)/documents/joinCodes/$(d.joinCode)).data.orgId == d.orgId
       );
-      // Admins approve people and change roles. Anyone can edit their own profile but not their own role.
-      allow update: if isAdmin() || (request.auth.uid == uid && request.resource.data.role == resource.data.role);
-      allow delete: if isAdmin();
     }
 
-    // Client requirements: everyone on the team reads them, senior HR and admins change them.
-    match /reqs/{id} {
-      allow read: if isMember();
-      allow create, update, delete: if isSenior();
+    // Company codes: anyone can check a code (so a wrong code is caught before sign-up).
+    match /joinCodes/{code} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if signedIn() &&
+        getAfter(/databases/$(database)/documents/orgs/$(request.resource.data.orgId)).data.ownerUid == request.auth.uid;
+      allow update: if adminOf(resource.data.orgId) && request.resource.data.orgId == resource.data.orgId;
     }
 
-    // Candidates: everyone on the team reads and updates them, only admins delete.
-    match /cands/{id} {
-      allow read, create, update: if isMember();
-      allow delete: if isAdmin() || (isSenior() && resource.data.example == true);
+    // Companies and everything inside them.
+    match /orgs/{org} {
+      allow get: if signedIn() && myOrg() == org;
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow update: if adminOf(org) && request.resource.data.ownerUid == resource.data.ownerUid;
+
+      match /reqs/{id} {
+        allow read: if memberOf(org);
+        allow create, update, delete: if seniorOf(org);
+      }
+      match /cands/{id} {
+        allow read, create, update: if memberOf(org);
+        allow delete: if adminOf(org) || (seniorOf(org) && resource.data.example == true);
+      }
     }
 
-    // Workspace name.
-    match /settings/{id} {
-      allow read: if isMember();
-      allow write: if isAdmin();
+    // People.
+    match /users/{uid} {
+      allow read: if signedIn() && (
+        request.auth.uid == uid ||
+        (resource.data.get('orgId', '') != '' && memberOf(resource.data.orgId))
+      );
+      allow create: if signedIn() && request.auth.uid == uid && validPlacement(request.resource.data);
+      allow update: if
+        // The company's Admin approves people and changes roles, inside their own company.
+        (adminOf(resource.data.get('orgId', '')) && request.resource.data.orgId == resource.data.orgId) ||
+        // An account with no company yet can place itself (same checks as sign-up).
+        (request.auth.uid == uid && resource.data.get('orgId', '') == '' && validPlacement(request.resource.data)) ||
+        // Anyone can edit their own details, but not their own role or company.
+        (request.auth.uid == uid &&
+          request.resource.data.role == resource.data.role &&
+          request.resource.data.get('orgId', '') == resource.data.get('orgId', ''));
+      allow delete: if request.auth.uid == uid || adminOf(resource.data.get('orgId', ''));
     }
   }
 }

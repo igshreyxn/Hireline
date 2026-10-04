@@ -7,6 +7,7 @@ import { useFirebaseBackend } from './backend/useFirebaseBackend.js'
 import { useLocalBackend } from './backend/useLocalBackend.js'
 import Login from './components/Login.jsx'
 import Pending from './components/Pending.jsx'
+import CompanySetup from './components/CompanySetup.jsx'
 import Header from './components/Header.jsx'
 import Today from './components/Today.jsx'
 import Pipeline from './components/Pipeline.jsx'
@@ -78,6 +79,15 @@ export default function App() {
       <>
         <Login backend={be} />
         <Splash />
+        {toastEl}
+      </>
+    )
+  }
+
+  if (be.mode === 'firebase' && profile.role !== 'error' && (profile.role === 'none' || !profile.orgId)) {
+    return (
+      <>
+        <CompanySetup profile={profile} backend={be} />
         {toastEl}
       </>
     )
