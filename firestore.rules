@@ -1,0 +1,55 @@
+rules_version = '2';
+
+// Hireline security rules.
+// Paste this into Firebase console → Firestore Database → Rules, then click Publish.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function profilePath() { return /databases/$(database)/documents/users/$(request.auth.uid); }
+    function role() {
+      return signedIn() && exists(profilePath()) ? get(profilePath()).data.role : 'none';
+    }
+    function isMember() { return role() in ['junior', 'senior', 'admin']; }
+    function isSenior() { return role() in ['senior', 'admin']; }
+    function isAdmin()  { return role() == 'admin'; }
+
+    // Records who set the workspace up. Created once, by the first account.
+    match /meta/setup {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid;
+    }
+
+    // Team profiles.
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isMember());
+      // New accounts start as "pending". Only the first account (the one in meta/setup) may start as admin.
+      allow create: if signedIn() && request.auth.uid == uid && (
+        request.resource.data.role == 'pending' ||
+        (request.resource.data.role == 'admin' &&
+          getAfter(/databases/$(database)/documents/meta/setup).data.ownerUid == uid)
+      );
+      // Admins approve people and change roles. Anyone can edit their own profile but not their own role.
+      allow update: if isAdmin() || (request.auth.uid == uid && request.resource.data.role == resource.data.role);
+      allow delete: if isAdmin();
+    }
+
+    // Client requirements: everyone on the team reads them, senior HR and admins change them.
+    match /reqs/{id} {
+      allow read: if isMember();
+      allow create, update, delete: if isSenior();
+    }
+
+    // Candidates: everyone on the team reads and updates them, only admins delete.
+    match /cands/{id} {
+      allow read, create, update: if isMember();
+      allow delete: if isAdmin() || (isSenior() && resource.data.example == true);
+    }
+
+    // Workspace name.
+    match /settings/{id} {
+      allow read: if isMember();
+      allow write: if isAdmin();
+    }
+  }
+}
